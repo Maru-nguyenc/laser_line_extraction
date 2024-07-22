@@ -1,5 +1,4 @@
-float32 radius
-float32 angle
-float32[4] covariance
-float32[2] start
-float32[2] end
+float32 radius_r
+float32 angle_r
+float32 radius_l
+float32 angle_l
