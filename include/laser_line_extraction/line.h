@@ -50,6 +50,10 @@ private:
   boost::array<double, 2> start_;
   boost::array<double, 2> end_;
   boost::array<double, 4> covariance_;
+  double angle_r_;
+  double radius_r_;
+  double angle_l_;
+  double radius_l_;
   // Methods
   void    angleFromEndpoints();
   void    angleFromLeastSq();
