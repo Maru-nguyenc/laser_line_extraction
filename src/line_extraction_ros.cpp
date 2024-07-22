@@ -137,16 +137,47 @@ void LineExtractionROS::loadParameters()
 void LineExtractionROS::populateLineSegListMsg(const std::vector<Line> &lines,
                                                 laser_line_extraction::LineSegmentList &line_list_msg)
 {
-  for (std::vector<Line>::const_iterator cit = lines.begin(); cit != lines.end(); ++cit)
-  {
-    laser_line_extraction::LineSegment line_msg;
-    line_msg.angle = cit->getAngle(); 
-    line_msg.radius = cit->getRadius(); 
-    line_msg.covariance = cit->getCovariance(); 
-    line_msg.start = cit->getStart(); 
-    line_msg.end = cit->getEnd(); 
-    line_list_msg.line_segments.push_back(line_msg);
+  struct {
+    float radius = 0.0;
+    float angle = 0.0;
+    float start[2] = {0.0, 0.0};
+    float end[2] = {0.0, 0.0};
+  } left, right;
+
+  for (std::vector<Line>::const_iterator cit = lines.begin(); cit != lines.end(); ++cit){
+    if(cit->getAngle() * 180.0 / M_PI >= 60 && cit->getAngle() * 180.0 / M_PI <= 165){ // khi phát hiện tường ở bên phải
+      float d1 = sqrt(pow((cit->getStart()[0] - cit->getEnd()[0]), 2) + pow((cit->getStart()[1] - cit->getEnd()[1]), 2));
+      float d2 = sqrt(pow((right.start[0] -right.end[0]), 2) + pow((right.start[1] - right.end[1]), 2));
+      if(d1 >= d2 && d1 >= 0.6){
+        right.radius = cit->getRadius(); 
+        right.angle = cit->getAngle();
+        left.start[0] = cit->getStart()[0];
+        left.start[1] = cit->getStart()[1];
+        left.end[0] = cit->getEnd()[0];
+        left.end[1] = cit->getEnd()[1];
+      }
+    }
+    if(cit->getAngle() * 180.0 / M_PI >= -165 && cit->getAngle() * 180.0 / M_PI <= -60){ // khi phát hiện tường ở bên trái
+      float d1 = sqrt(pow((cit->getStart()[0] - cit->getEnd()[0]), 2) + pow((cit->getStart()[1] - cit->getEnd()[1]), 2));
+      float d2 = sqrt(pow((left.start[0] -left.end[0]), 2) + pow((left.start[1] - left.end[1]), 2));
+      if(d1 >= d2 && d1 >= 0.6){
+        left.radius = cit->getRadius(); 
+        left.angle = cit->getAngle();
+        left.start[0] = cit->getStart()[0];
+        left.start[1] = cit->getStart()[1];
+        left.end[0] = cit->getEnd()[0];
+        left.end[1] = cit->getEnd()[1];
+      }
+    }
   }
+
+  laser_line_extraction::LineSegment line_msg;
+  line_msg.angle_r = right.angle; 
+  line_msg.radius_r = right.radius; 
+  line_msg.angle_l = left.angle; 
+  line_msg.radius_l = left.radius; 
+  line_list_msg.line_segments.push_back(line_msg);
+  
   line_list_msg.header.frame_id = frame_id_;
   line_list_msg.header.stamp = ros::Time::now();
 }
